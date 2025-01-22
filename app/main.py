@@ -24,4 +24,4 @@ app.include_router(chat.router, prefix="/chat", tags=["Chat"])
 
 @app.get("/")
 def home():
-    return {"message": "Welcome to PDF Chat API!"}
+    return {"message": "Welcome to AskPDF-AI Chat API!"}
