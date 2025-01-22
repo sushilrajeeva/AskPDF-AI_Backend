@@ -6,8 +6,8 @@ from app.config import load_env
 # Load environment variables
 load_env()
 
-# Initialize FastAPI
-app = FastAPI(title="PDF Chat API", description="Chat with multiple PDFs using AI")
+# Initialize FastAPI with "/api" prefix
+app = FastAPI(title="PDF Chat API", description="Chat with multiple PDFs using AI", openapi_prefix="/api")
 
 # ✅ Fix CORS to allow frontend requests
 app.add_middleware(
@@ -18,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# Include API routes
+# Include API routes (Now prefixed with "/api")
 app.include_router(pdf_processing.router, prefix="/pdf", tags=["PDF Processing"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
 
