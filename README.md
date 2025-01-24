@@ -47,26 +47,26 @@ Below is a preview of the **AskPDF-AI** user interface:
 
 ## **🚀 Installation and Setup**
 
-### **1️. Clone the Repository **
+### 1️. Clone the Repository 
 ```sh
 git clone https://github.com/sushilrajeeva/AskPDF-AI_Backend.git
 cd AskPDF-AI_Backend
 ```
 
 
-### **2. Create a Virtual Environment **
+### 2. Create a Virtual Environment 
 ```sh
 python -m venv venv
 source venv/bin/activate  # On Windows use: venv\Scripts\activate
 ```
 
 
-### **3. Install Dependencies **
+### 3. Install Dependencies 
 ```sh
 pip install -r requirements.txt
 ```
 
-### **4. Configure Environment Variables **
+### 4. Configure Environment Variables 
 Create a .env file in the root directory and add:
 
 ```sh
@@ -76,7 +76,7 @@ REDIS_URL=your_redis_url
 
 ```
 
-### **5. Run the Backend Locally **
+### 5. Run the Backend Locally 
 Create a .env file in the root directory and add:
 
 ```sh
