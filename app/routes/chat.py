@@ -1,89 +1,98 @@
+from typing import *
 from fastapi import APIRouter, HTTPException, Request
 from app.models.chat_model import ChatRequest
-from app.services.vector_store import get_vectorstore
+from app.services.vector_store import query_text_chunks
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 import app.state
 
 router = APIRouter()
-chat_history = []
+
+# For demonstration, store chat histories in a dictionary, keyed by chat_id
+chat_histories: Dict[str, List] = {}
 
 @router.post("/ask/")
-async def ask_question(request: Request):
-    """Handles user questions and retrieves AI-generated responses"""
+async def ask_question(payload: ChatRequest):
+    """
+        Takes a chat_id and question, retrieves relevant PDF text from Pinecone,
+        and uses LLM to generate an answer.
+    """
+    chat_id = payload.chat_id
+    question = payload.question
 
-    print("✅ Entered ask_questions method")
+    print("Entered ask_questions method")
 
-    # ✅ Check if vector store exists
-    if app.state.vector_store is None:
-        print("❌ Error: App State is None")
-        raise HTTPException(status_code=400, detail="No documents uploaded. Please upload a PDF first.")
+    if not chat_id:
+        raise HTTPException(status_code=400, detail="No chat_id provided. Please upload a PDF first.")
 
-    vector_store = app.state.vector_store
-    retriever = vector_store.as_retriever()
+    if not question.strip():
+        raise HTTPException(status_code=400, detail="No question provided.")
 
-    request_json = await request.json()
-    print("📥 Received request:", request_json)
+    # 1. Retrieve relevant documents from Pinecone
+    print("Querying text chunks to retrieve documents from Pinecone")
+    docs = query_text_chunks(question, chat_id, top_k=4)
+    print("📥 Received docs")
 
-    if "question" not in request_json or not request_json["question"]:
-        print("❌ Missing question field in request")
-        raise HTTPException(status_code=400, detail="Missing required field: 'question'")
+    # Format them into a single string for context
+    context = "\n\n".join(doc.page_content for doc in docs)
 
-    llm = ChatOpenAI()
+    # 2. Check chat history for this session
+    print("checking if chat_id is present in chat_histories")
+    if chat_id not in chat_histories:
+        print("chat_id:", chat_id, "not found in chat_histories")
+        print("Adding the new chat_id to chat_histories")
+        chat_histories[chat_id] = []
 
-    system_template = """You are a helpful AI assistant. Use the following pieces of context to answer the human's question. If you don't know the answer, say that you don't know.
+    # 3. Build the prompt
+    print("building prompt...")
+    system_template = """You are a helpful AI assistant. Use the following context to answer:
+    If you're unsure, say "I don't know."
 
-    Context: {context}"""
+    Context: {context}
+    """
 
-    print("📝 Creating Prompt...")
-    
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_template),
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{question}")
     ])
 
-    print("✅ Prompt created.")
+    print("Prompt created.")
 
-    def format_docs(docs):
-        print(f"📄 Format Docs started... {len(docs)} documents found")
-        return "\n\n".join(doc.page_content for doc in docs)
+    # 4. Create an LLM instance
+    print("creating llm instance....")
+    llm = ChatOpenAI()
 
+    # 5. Build a chain in a pipeline style (depending on your LangChain version)
     print("🔄 Creating chain...")
-    
-    # ✅ Correctly format the chain
     chain = (
         {
-            "context": lambda x: format_docs(retriever.get_relevant_documents(x["question"])),
-            "chat_history": lambda x: chat_history,
-            "question": lambda x: x["question"]
-        }
-        | prompt  # ✅ Ensure prompt is part of the pipeline
-        | llm  # ✅ Pass data correctly to the LLM
+            "context": lambda x: context,
+            "chat_history": lambda x: chat_histories[chat_id],
+            "question": lambda x: question
+        } | prompt | llm
     )
 
     try:
         print("🚀 Executing chain.invoke()...")
-        response = chain.invoke({"question": request_json["question"]})
+        response = chain.invoke({})
         print("✅ Chain executed. Raw Response:", response)
-
-        # ✅ Extract only the response text
-        if isinstance(response, dict) and "content" in response:
-            response_text = response["content"]
-        elif hasattr(response, "content"):
-            response_text = response.content
-        else:
-            response_text = str(response)  # Convert to string as fallback
-
-        print("✅ Extracted response:", response_text)
-
     except Exception as e:
-        print("❌ Error in LangChain pipeline:", str(e))
-        raise HTTPException(status_code=500, detail="Internal error in AI processing.")
+        raise HTTPException(status_code=500, detail=str(e))
 
-    chat_history.append(HumanMessage(content=request_json["question"]))
-    chat_history.append(AIMessage(content=response_text))  # ✅ Fix: Use extracted text
+    # Extract the answer text
+    if isinstance(response, dict) and "content" in response:
+        answer = response["content"]
+    else:
+        answer = str(response)
+
+    print("✅ Extracted response:", answer)
+
+    # 6. Update chat history
+    chat_histories[chat_id].append(HumanMessage(content=question))
+    chat_histories[chat_id].append(AIMessage(content=answer))
 
     print("✅ ask_questions method successfully executed")
-    return {"response": response_text}
+
+    return {"response": answer}
