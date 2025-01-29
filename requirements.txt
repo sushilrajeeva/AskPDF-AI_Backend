@@ -9,3 +9,6 @@ faiss-cpu
 sentence-transformers
 python-dotenv
 python-multipart
+pinecone
+pinecone-client
+openai
