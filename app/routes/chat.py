@@ -5,6 +5,7 @@ from app.services.vector_store import query_text_chunks
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.output_parsers import StrOutputParser
 import app.state
 
 router = APIRouter()
@@ -71,7 +72,7 @@ async def ask_question(payload: ChatRequest):
             "context": lambda x: context,
             "chat_history": lambda x: chat_histories[chat_id],
             "question": lambda x: question
-        } | prompt | llm
+        } | prompt | llm | StrOutputParser()  # ensures we get raw text, not additional metadata
     )
 
     try:
