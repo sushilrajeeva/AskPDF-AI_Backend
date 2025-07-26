@@ -1,18 +1,14 @@
-# Use an official Python runtime as a parent image
-FROM python:3.12
+# Use AWS’s Python 3.12 Lambda base image
+FROM public.ecr.aws/lambda/python:3.12
 
-# Set the working directory
-WORKDIR /app
+WORKDIR /var/task
 
-# Copy requirements and install dependencies
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
+# Copy your app code
 COPY . .
 
-# Expose the application port
-EXPOSE 8000
-
-# Set the entrypoint to Uvicorn explicitly
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Tell Lambda which handler to invoke
+CMD ["app.main.handler"]

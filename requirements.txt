@@ -4,11 +4,11 @@ pydantic
 PyPDF2
 langchain
 langchain-openai
+langchain-pinecone
 langchain-community
-faiss-cpu
-sentence-transformers
 python-dotenv
 python-multipart
 pinecone
-pinecone-client
 openai
+boto3
+mangum
