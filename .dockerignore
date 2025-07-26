@@ -1,2 +1,7 @@
-# Ignore environment files
+# Ignore env & uploads
 .env
+/uploads
+
+# Ignore Terraform folder & Git metadata
+terraform/
+.git

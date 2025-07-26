@@ -1,2 +1,8 @@
 /.env
 /uploads
+
+# Terraform local files
+terraform.tfvars
+*.tfstate
+*.tfstate.backup
+.terraform/
