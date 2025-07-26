@@ -7,6 +7,7 @@ if os.getenv("AWS_EXECUTION_ENV") is None:
 
 from pinecone import Pinecone, ServerlessSpec
 
+
 # read your Pinecone config exactly once
 PINECONE_API_KEY    = os.getenv("PINECONE_API_KEY")       # e.g. pcsk_xxx
 PINECONE_ENV        = os.getenv("PINECONE_ENV")           # e.g. us‑east‑1‑aws
